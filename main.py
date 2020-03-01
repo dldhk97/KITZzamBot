@@ -13,6 +13,7 @@ from requests import get
 from urllib import parse
 from obj import *
 from datetime import datetime, timedelta
+from dateutil.parser import parse
 
 load_dotenv()  # load bot environment
 
@@ -103,9 +104,8 @@ async def zzam(ctx, *args):
 
     await ctx.channel.trigger_typing()                          # 봇 상태를 타이핑중으로 변경.
 
-    user_input = args[1]
-
     if len(args) > 1:
+        user_input = args[1]
         date = normalize_date(user_input)
     else:
         date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 탐색 시간을 오늘로 설정
@@ -149,7 +149,7 @@ def normalize_date(date_str):
 
     else:
         try:
-            date = datetime.strptime(date_str, '%Y-%m-%d')    # 델타 날짜가 아니라면 일반 날짜(YYYY-mm-dd)로 인식
+            date = parse(date_str)    # 델타 날짜가 아니라면 일반 날짜(YYYY-mm-dd)로 인식
         except:
             raise Exception('날짜 형식이 잘못 되었습니다.')
 
@@ -225,11 +225,7 @@ def parse_zzam(cafeteria_type, date):
         url_date -= timedelta(days=1)
     URL += 'mode=menuList&srDt=' + url_date.strftime('%Y-%m-%d')
 
-    # 학교홈페이지에서 파싱할지 기숙사페이지에서 파싱할지 결정
-    if is_dormitory:
-        return parse_dormpage(URL, cafeteria_type, date)
-    else:
-        return parse_homepage(URL, cafeteria_type, date)
+    return parse_homepage(URL, cafeteria_type, date)
         
 
 
@@ -248,7 +244,7 @@ def parse_homepage(url, cafeteria_type, date):
     menu_start_date_html = menu_req_html.select('fieldset > div > div > p')
     start_date_text = menu_start_date_html[0].text.replace('\t','').replace('\n','').replace('\r','')
     start_date_text = start_date_text.split('~')[0]
-    start_date = datetime.strptime(start_date_text, '%Y.%m.%d')
+    start_date = parse(start_date_text)
 
     # 이번주 모든 메뉴 겟
     menu_list_html = menu_req_html.select('table > tbody > tr > td')
@@ -279,12 +275,8 @@ def parse_homepage(url, cafeteria_type, date):
         resultArr.append(m)
         cnt += 1
 
-    print('hompage successfully parsed')
+    print('zzam successfully parsed')
     return resultArr
-
-
-def parse_dormpage(url, cafeteria_type, date):
-    print('parse_dorm')
 
 
 # $평가 [식당] -> 이번 메뉴 목록 (점심이면 점심, 저녁시간이면 저녁) 표시하고 평가받을 수 있게
