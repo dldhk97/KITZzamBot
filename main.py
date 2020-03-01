@@ -14,6 +14,7 @@ from urllib import parse
 from obj import *
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from pytz import timezone, utc
 
 load_dotenv()  # load bot environment
 
@@ -28,6 +29,8 @@ DORM_PUROOM_URL = ""
 DORM_OREUM1_URL = ""
 DORM_OREUM3_URL = ""
 INVITE_URL="https://discordapp.com/oauth2/authorize?client_id=683609253575131157&scope=bot&permissions=101440"
+
+KST = timezone('Asia/Seoul')
 
 bot = commands.Bot("")
 
@@ -66,7 +69,7 @@ def from_text(ctx):
 
 
 def log(fr, text):
-    print(f'{fr} | {str(datetime.now())} | {text}')  # TODO: 시간대 조정
+    print(f'{fr} | {str(datetime.now(KST))} | {text}')
 
 
 @bot.event
@@ -136,12 +139,14 @@ async def zzam(ctx, *args):
         user_input = args[1]
         try:
             date = normalize_date(user_input)
+            log(from_text(ctx), f'target is {str(date)}')
         except Exception as e:
             await ctx.channel.send(e)
             log(from_text(ctx), 'wrong date str')
             return
     else:
-        date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 탐색 시간을 오늘로 설정
+        date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 오늘로 설정
+        log(from_text(ctx), f'target is today : {str(date)}')
 
     cafeteria_name = args[0]
     cafe_type = CafeteriaType.str_to(cafeteria_name)
@@ -170,7 +175,7 @@ async def zzam(ctx, *args):
 
 # 문자열 날짜가 델타 날짜(어제/오늘/모레)인지, 요일(월/화/수)인지, 일반타입(YYYY-mm-nn)인지 구별하여 정규화하여 반환함.
 def normalize_date(date_str):
-    date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 탐색 시간을 일단 오늘로 설정
+    date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 일단 오늘로 설정
 
     if DeltaDay.is_delta_day(date_str):
         delta_day = DeltaDay.str_to(date_str)
