@@ -27,6 +27,7 @@ SNACKBAR_URL = ""
 DORM_PUROOM_URL = ""
 DORM_OREUM1_URL = ""
 DORM_OREUM3_URL = ""
+INVITE_URL="https://discordapp.com/oauth2/authorize?client_id=683609253575131157&scope=bot&permissions=101440"
 
 bot = commands.Bot("")
 
@@ -84,7 +85,34 @@ async def on_ready():
 @bot.command(name='도움')
 async def help(ctx):
     log(from_text(ctx), 'help command')
-    print("도움")
+    embed = Embed(title='KIT 짬봇 for Discord입니다.',
+                  description='명령어들은 아래와 같습니다.',
+                  color=EMBED_COLOR)
+    embed.add_field(name='사용 방법', value=f'{PREFIX}짬 [식당명] [옵션-날짜]', inline=False)
+    embed.add_field(name='간단 사용', value=f'{PREFIX}짬 학생식당, {PREFIX}짬 분식당, {PREFIX}짬 푸름관, {PREFIX}짬 오름관3동 ...', inline=False)
+    embed.add_field(name='축약어 사용', value=f'{PREFIX}짬 학식, {PREFIX}짬 분식, {PREFIX}짬 푸밥, {PREFIX}짬 오3 ...', inline=False)
+    embed.add_field(name='날짜 사용', value=f'{PREFIX}짬 푸름관 내일, {PREFIX}짬 푸름관 수요일, {PREFIX}짬 학생식당 2020-01-01 ...', inline=False)
+    embed.add_field(name='명령어', value=f'{PREFIX}짬, {PREFIX}도움, {PREFIX}대하여, {PREFIX}초대링크', inline=False)
+
+    embed.set_footer(text='(날짜는 넣어도 되고 안넣어도 됩니다.)')
+    await ctx.channel.send(embed=embed)
+
+
+@bot.command(name='초대링크')
+async def help(ctx):
+    log(from_text(ctx), 'invite_link command')
+    await ctx.channel.send(f'봇 초대 링크 : {INVITE_URL}')
+
+
+@bot.command(name='대하여')
+async def about(ctx):
+    log(from_text(ctx), 'about command')
+    embed = Embed(title='KIT 짬봇',
+                  description='금오공과대학교 식단표를 볼 수 있게 해주는 디스코드 봇입니다.',
+                  color=EMBED_COLOR)
+    embed.add_field(name='Repository', value='https://github.com/dldhk97/KITZzamBot', inline=False)
+    embed.set_footer(text='impressed by dccon hassan. repo : https://github.com/Dogdriip/dccon_hassan')
+    await ctx.channel.send(embed=embed)
 
 
 # $짬 [식당] -> 오늘 해당식당 메뉴 표기
@@ -106,7 +134,12 @@ async def zzam(ctx, *args):
 
     if len(args) > 1:
         user_input = args[1]
-        date = normalize_date(user_input)
+        try:
+            date = normalize_date(user_input)
+        except Exception as e:
+            await ctx.channel.send(e)
+            log(from_text(ctx), 'wrong date str')
+            return
     else:
         date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 탐색 시간을 오늘로 설정
 
@@ -116,6 +149,7 @@ async def zzam(ctx, *args):
     week_menu_list = ''
     try:
         week_menu_list = parse_zzam(cafe_type, date)           # 식당, 날짜를 특정하여 해당되는 주의 모든 메뉴 파싱
+        log(from_text(ctx), 'week menu parsed')
     except Exception as e:
         await ctx.channel.send(e)
         return

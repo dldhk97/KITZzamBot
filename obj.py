@@ -34,7 +34,7 @@ class CafeteriaType(enum.Enum):
             return CafeteriaType.STAFF
         elif str in ['분식당', '분식', '분']:
             return CafeteriaType.SNACKBAR
-        elif str in ['푸름관', '푸름', '푸']:
+        elif str in ['푸름관', '푸름', '푸', '푸밥']:
             return CafeteriaType.PUROOM
         elif str in ['오름관1동', '오름1', '오1', '1동']:
             return CafeteriaType.OREUM1
