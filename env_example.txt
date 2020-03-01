@@ -1,0 +1,8 @@
+BOT_TOKEN=INPUT_YOUR_BOT_TOKEN
+PREFIX=$
+STUDENT_CAFETERIA_URL=https://kumoh.ac.kr/ko/restaurant01.do?
+STAFF_CAFETERIA_URL=https://kumoh.ac.kr/ko/restaurant02.do?
+SNACKBAR_URL=https://kumoh.ac.kr/ko/restaurant04.do?
+DORM_PUROOM_URL=http://dorm.kumoh.ac.kr/dorm/restaurant_menu01.do?
+DORM_OREUM1_URL=http://dorm.kumoh.ac.kr/dorm/restaurant_menu02.do?
+DORM_OREUM3_URL=http://dorm.kumoh.ac.kr/dorm/restaurant_menu03.do?
