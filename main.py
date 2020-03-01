@@ -27,6 +27,7 @@ DORM_PUROOM_URL = ""
 DORM_OREUM1_URL = ""
 DORM_OREUM3_URL = ""
 
+bot = commands.Bot("")
 
 def load_env():
     global BOT_TOKEN, PREFIX, STUDENT_CAFETERIA_URL, STAFF_CAFETERIA_URL, SNACKBAR_URL, DORM_PUROOM_URL, DORM_OREUM1_URL, DORM_OREUM3_URL
@@ -41,11 +42,13 @@ def load_env():
     DORM_OREUM1_URL = get_env_var('DORM_OREUM1_URL')
     DORM_OREUM3_URL = get_env_var('DORM_OREUM3_URL')
 
+
 def get_env_var(var_name):
     result = os.getenv(var_name)
     if not result:
         raise Exception(f'no {var_name}')
     return result
+
 
 def from_text(ctx):
     # msg_fr = msg.server.name + ' > ' + msg.channel.name + ' > ' + msg.author.name
@@ -59,11 +62,9 @@ def from_text(ctx):
     else:
         return f'{ctx.guild.name} > {ctx.channel.name} > {ctx.author.name}'
 
+
 def log(fr, text):
     print(f'{fr} | {str(datetime.now())} | {text}')  # TODO: 시간대 조정
-
-
-bot = commands.Bot("")
 
 
 @bot.event
@@ -97,35 +98,24 @@ async def zzam(ctx, *args):
 
     if not args or len(args) > 2:
         log(from_text(ctx), 'empty args')
-        await ctx.channel.send(f'사용법을 참고해주세요. ({PREFIX}도움)')
+        await ctx.channel.send(f'사용법 : {PREFIX}짬 [식당] [옵션-날짜]\n자세히 : {PREFIX}도움')
         return
 
-    await ctx.channel.trigger_typing()                # 봇 상태를 타이핑중으로 변경.
+    await ctx.channel.trigger_typing()                          # 봇 상태를 타이핑중으로 변경.
 
-    date = ''
+    user_input = args[1]
+
     if len(args) > 1:
-        delta_day = DeltaDay.str_to(args[1])                 # 델타 날짜(어제/오늘/내일/모레 등) 인가?
-
-        if delta_day is not DeltaDay.UNKNOWN:
-            date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0) + timedelta(days=delta_day.value)
-        else:
-            # 델타 날짜가 아니라면 일반 날짜(YYYY-mm-dd)로 인식
-            try:
-                date = datetime.strptime(args[1], '%Y-%m-%d')
-            except:
-                await ctx.channel.send('날짜 형식이 잘못 되었습니다.')
-                return
+        date = normalize_date(user_input)
     else:
-        date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 추가 인자 없으면 오늘로 설정
+        date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 탐색 시간을 오늘로 설정
 
     cafeteria_name = args[0]
-    cafe_info = categorize_cafe_name(cafeteria_name)
-    cafe_type = cafe_info[0]
-    cafe_detail_type = cafe_info[1]
+    cafe_type = CafeteriaType.str_to(cafeteria_name)
 
     week_menu_list = ''
     try:
-        week_menu_list = parse_zzam(cafe_type, cafe_detail_type, date)           # 식당, 날짜를 특정하여 해당되는 주의 모든 메뉴 파싱
+        week_menu_list = parse_zzam(cafe_type, date)           # 식당, 날짜를 특정하여 해당되는 주의 모든 메뉴 파싱
     except Exception as e:
         await ctx.channel.send(e)
         return
@@ -144,6 +134,28 @@ async def zzam(ctx, *args):
         log(from_text(ctx), 'zzam no result from week_menu_list')
 
 
+# 문자열 날짜가 델타 날짜(어제/오늘/모레)인지, 요일(월/화/수)인지, 일반타입(YYYY-mm-nn)인지 구별하여 정규화하여 반환함.
+def normalize_date(date_str):
+    date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0)        # 탐색 시간을 일단 오늘로 설정
+
+    if DeltaDay.is_delta_day(date_str):
+        delta_day = DeltaDay.str_to(date_str)
+        date += timedelta(days=delta_day.value)               # 델타 날짜이면 현재로부터 delta 날짜만큼 조정한다.
+
+    elif DayOfWeek.is_day_of_week(date_str):
+        day_of_week = DayOfWeek.str_to(date_str)
+        diff = 0 - (date.weekday() - day_of_week.value)
+        date += timedelta(days=diff)                          # 요일이면 현재 요일로부터 대상 요일만큼 조정한다.
+
+    else:
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d')    # 델타 날짜가 아니라면 일반 날짜(YYYY-mm-dd)로 인식
+        except:
+            raise Exception('날짜 형식이 잘못 되었습니다.')
+
+    return date
+
+
 # 파싱한 메뉴 배열 중 요청한 날짜의 메뉴만 반환
 def fetch_menu_by_date(menu_list, date):
     target_menu_list = []
@@ -152,8 +164,9 @@ def fetch_menu_by_date(menu_list, date):
             target_menu_list.append(m)
 
     return target_menu_list
-    
 
+    
+# 전송을 위해 한 식단을 embed
 def menu_to_embed(menu):
     day_of_week_text = DayOfWeek.to_str(DayOfWeek.int_to_dow(menu._date.weekday()))
     date_simple_text = menu._date.strftime('%m.%d') + ' (' + day_of_week_text + ')'
@@ -162,11 +175,8 @@ def menu_to_embed(menu):
     date_full_text = menu._date.strftime('%Y-%m-%d')
     emoji = MealTimeType.to_emoji(menu._meal_time_type)
 
-    # 교내식당/기숙사 구분 후 식당이름 지정
-    if menu._cafe_type is CafeteriaType.NORM:
-        cafe_type_text = NormCafeType.to_str(menu._cafe_detail_type)
-    elif menu._cafe_type is CafeteriaType.DORM:
-        cafe_type_text = DormCafeType.to_str(menu._cafe_detail_type)
+    # 식당이름 enum화
+    cafe_type_text = CafeteriaType.to_str(menu._cafe_type)
 
     # 메뉴 배열 텍스트화
     menu_elems_txt = ''
@@ -183,68 +193,31 @@ def menu_to_embed(menu):
     embed.set_footer(text=f'{date_full_text}')
     return embed
 
-    
 
+# 식당에 알맞는 URL 설정 및 날짜 설정 후 파싱 시도
+def parse_zzam(cafeteria_type, date):
 
-# 사용자로부터 입력받은 식당이름을 가지고 좀 더 명확히 만든다. 
-# 첫 인덱스에는 교내식당/기숙사 구별, 두번째 인덱스에는 어느 식당인지 저장하여 반환함.
-def categorize_cafe_name(cafeteria_name):
-    resultArr = []
-
-    cafe_type = CafeteriaType.UNKNOWN
-    cafe_detail_type = NormCafeType.UNKNOWN
-
-    if cafeteria_name in ['학생식당', '학생', '학식당', '학식', '학']:
-        cafe_type = CafeteriaType.NORM
-        cafe_detail_type = NormCafeType.STUDENT
-    elif cafeteria_name in ['교직원식당', '교직원', '교식당', '교식', '교']:
-        cafe_type = CafeteriaType.NORM
-        cafe_detail_type = NormCafeType.STAFF
-    elif cafeteria_name in ['분식당', '분식', '분']:
-        cafe_type = CafeteriaType.NORM
-        cafe_detail_type = NormCafeType.SNACKBAR
-    elif cafeteria_name in ['푸름관', '푸름', '푸']:
-        cafe_type = CafeteriaType.DORM
-        cafe_detail_type = DormCafeType.PUROOM
-    elif cafeteria_name in ['오름관1동', '오름1', '오1', '1동']:
-        cafe_type = CafeteriaType.DORM
-        cafe_detail_type = DormCafeType.OREUM1
-    elif cafeteria_name in ['오름관3동', '오름3', '오3', '3동']:
-        cafe_type = CafeteriaType.DORM
-        cafe_detail_type = DormCafeType.OREUM3
-
-    resultArr.append(cafe_type)
-    resultArr.append(cafe_detail_type)
-
-    return resultArr
-
-
-# 식당, 날짜를 특정하여 해당되는 주의 모든 메뉴 파싱
-def parse_zzam(cafeteria_type, detail_type, date):
-    if cafeteria_type is CafeteriaType.NORM:
-        return parse_cafeteria(detail_type, date)
-    elif cafeteria_type is CafeteriaType.DORM:
-        return parse_dorm(detail_type, date)
-    else:
-        raise Exception('unknown CafeteriaType')
-
-
-def parse_cafeteria(detail_type, date):
-    print('parse cafeteria')
-
-    session = requests.Session()
-
+    is_dormitory = False
     URL = ''
 
     # 학생식당/교직원식당/분식당별 URL 설정
-    if detail_type is NormCafeType.STUDENT:
+    if cafeteria_type is CafeteriaType.STUDENT:
         URL = STUDENT_CAFETERIA_URL
-    elif detail_type is NormCafeType.STAFF:
+    elif cafeteria_type is CafeteriaType.STAFF:
         URL = STAFF_CAFETERIA_URL
-    elif detail_type is NormCafeType.SNACKBAR:
+    elif cafeteria_type is CafeteriaType.SNACKBAR:
         URL = SNACKBAR_URL
+    elif cafeteria_type is CafeteriaType.PUROOM:
+        URL = DORM_PUROOM_URL
+        is_dormitory = True
+    elif cafeteria_type is CafeteriaType.OREUM1:
+        URL = DORM_OREUM1_URL
+        is_dormitory = True
+    elif cafeteria_type is CafeteriaType.OREUM3:
+        URL = DORM_OREUM3_URL
+        is_dormitory = True
     else:
-        raise Exception('unknown NormCafeType')
+        raise Exception('알 수 없는 식당 유형입니다.')
 
     # URL용 날짜 설정 (찾기 원하는 날짜가 일요일이면 달력이 넘어가서 하루 빼주고 파싱함)
     url_date = date
@@ -252,9 +225,18 @@ def parse_cafeteria(detail_type, date):
         url_date -= timedelta(days=1)
     URL += 'mode=menuList&srDt=' + url_date.strftime('%Y-%m-%d')
 
-    # 파싱 리퀘스트
-    menu_req = session.get(URL)
+    # 학교홈페이지에서 파싱할지 기숙사페이지에서 파싱할지 결정
+    if is_dormitory:
+        return parse_dormpage(URL, cafeteria_type, date)
+    else:
+        return parse_homepage(URL, cafeteria_type, date)
+        
 
+
+def parse_homepage(url, cafeteria_type, date):
+    # 파싱 리퀘스트
+    session = requests.Session()
+    menu_req = session.get(url)
     menu_req_html = BeautifulSoup(menu_req.text, 'html.parser')
 
     # 등록된 메뉴가 있는지 체크
@@ -262,49 +244,46 @@ def parse_cafeteria(detail_type, date):
     if menu_exist_check_html:
         raise Exception('등록된 메뉴가 없습니다.')
 
-    # 시작 날짜 겟
+    # 이번주의 시작 날짜 겟
     menu_start_date_html = menu_req_html.select('fieldset > div > div > p')
     start_date_text = menu_start_date_html[0].text.replace('\t','').replace('\n','').replace('\r','')
     start_date_text = start_date_text.split('~')[0]
     start_date = datetime.strptime(start_date_text, '%Y.%m.%d')
 
-    # 메뉴 겟
+    # 이번주 모든 메뉴 겟
     menu_list_html = menu_req_html.select('table > tbody > tr > td')
     cnt = 0
     resultArr = []
 
+    # 이번주 요일별 탐색
     for menu_html in menu_list_html:
-        meal_time_txt = menu_html.select('p')[0].text
+        # 조식/중식/석식인지 알아내기
+        parsed_meal_time = menu_html.select('p')[0].text
         meal_time_type = MealTimeType.UNKNOWN
 
-        if detail_type is NormCafeType.SNACKBAR:
+        if cafeteria_type is CafeteriaType.SNACKBAR:                # 분식당인 경우 일품요리로 고정
             meal_time_type = MealTimeType.ONECOURSE
         else:
-            if meal_time_txt == MealTimeType.to_str(MealTimeType.LUNCH):
-                meal_time_type = MealTimeType.LUNCH
-            elif meal_time_txt == MealTimeType.to_str(MealTimeType.DINNER):
-                meal_time_type = MealTimeType.DINNER
-            elif meal_time_txt == MealTimeType.to_str(MealTimeType.BREAKFAST):
-                meal_time_type = MealTimeType.BREAKFAST
+            meal_time_type = MealTimeType.str_to(parsed_meal_time)
 
         menu_detail_html = menu_html.select('ul > li')
         menu_elems = []
 
+        # 한 요일 내 메뉴들 탐색
         for menu_elem_html in menu_detail_html:
-            elem_txt = menu_elem_html.text
-            menu_elems.append(elem_txt)
+            menu_elems.append(menu_elem_html.text)
 
         # 메뉴 객체 생성
         menu_date = start_date + timedelta(days=cnt%7)
-        m = Menu(CafeteriaType.NORM, detail_type, menu_date, meal_time_type, menu_elems)
+        m = Menu(cafeteria_type, menu_date, meal_time_type, menu_elems)
         resultArr.append(m)
         cnt += 1
 
-    print('successfully parsed')
+    print('hompage successfully parsed')
     return resultArr
 
 
-def parse_dorm(detail_type, date):
+def parse_dormpage(url, cafeteria_type, date):
     print('parse_dorm')
 
 
