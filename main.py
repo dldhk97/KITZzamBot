@@ -78,12 +78,6 @@ async def on_ready():
     log('SYSTEM', 'PREFIX : ' + PREFIX)
     await bot.change_presence(activity=Game(name=f'{PREFIX}도움'))
 
-#@bot.event
-#async def on_message(message):
-#    if message.content.startswith('$greet'):
-#        channel = message.channel
-#        await channel.send('Say hello!')
-
 
 @bot.command(name='도움')
 async def help(ctx):
@@ -96,8 +90,8 @@ async def help(ctx):
     embed.add_field(name='축약어 사용', value=f'{PREFIX}짬 학식, {PREFIX}짬 분식, {PREFIX}짬 푸밥, {PREFIX}짬 오3 ...', inline=False)
     embed.add_field(name='날짜 사용', value=f'{PREFIX}짬 푸름관 내일, {PREFIX}짬 푸름관 수요일, {PREFIX}짬 학생식당 2020-01-01 ...', inline=False)
     embed.add_field(name='명령어', value=f'{PREFIX}짬, {PREFIX}도움, {PREFIX}대하여, {PREFIX}초대링크', inline=False)
-
-    embed.set_footer(text='(날짜는 넣어도 되고 안넣어도 됩니다.)')
+    embed.add_field(name='식당', value='학생식당, 교직원식당, 분식당, 푸름관, 오름관1동, 오름관3동', inline=False)
+    embed.set_footer(text='축약어는 어지간하면 다 됩니다. 학식, 분식, 오3, 푸짬...\n날짜를 안넣으면 오늘 식단을 보여줍니다.')
     await ctx.channel.send(embed=embed)
 
 
@@ -227,8 +221,9 @@ def menu_to_embed(menu):
 
     # 임베드 생성
     embed = Embed(title=f'{cafe_type_text} {meal_time_text} {emoji} {date_simple_text}',
-                  description=f'{menu_elems_txt}',
+                  #description=f'{menu_elems_txt}',
                   color=EMBED_COLOR)
+    embed.add_field(name='메뉴',value=f'{menu_elems_txt}\n[[링크]]({menu._url})')
     embed.set_footer(text=f'{date_full_text}')
     return embed
 
@@ -310,7 +305,7 @@ def parse_homepage(url, cafeteria_type, date):
 
         # 메뉴 객체 생성
         menu_date = start_date + timedelta(days=cnt%7)
-        m = Menu(cafeteria_type, menu_date, meal_time_type, menu_elems)
+        m = Menu(cafeteria_type, menu_date, meal_time_type, menu_elems, url)
         resultArr.append(m)
         cnt += 1
 

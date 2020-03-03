@@ -34,11 +34,11 @@ class CafeteriaType(enum.Enum):
             return CafeteriaType.STAFF
         elif str in ['분식당', '분식', '분']:
             return CafeteriaType.SNACKBAR
-        elif str in ['푸름관', '푸름', '푸', '푸밥']:
+        elif str in ['푸름관', '푸름', '푸', '푸밥', '푸짬']:
             return CafeteriaType.PUROOM
-        elif str in ['오름관1동', '오름1', '오1', '1동']:
+        elif str in ['오름관1동', '오름1', '오1', '1동', '오1짬', '1짬', '일동']:
             return CafeteriaType.OREUM1
-        elif str in ['오름관3동', '오름3', '오3', '3동']:
+        elif str in ['오름관3동', '오름3', '오3', '3동', '오3짬', '3짬', '삼동']:
             return CafeteriaType.OREUM3
         else:
             return CafeteriaType.UNKNOWN
@@ -87,11 +87,12 @@ class MealTimeType(enum.Enum):
             return ':question:'
 
 class Menu:
-    def __init__(self, cafe_type, date, meal_time_type, menu_elems):
+    def __init__(self, cafe_type, date, meal_time_type, menu_elems, url):
         self._cafe_type = cafe_type
         self._date = date
         self._meal_time_type = meal_time_type
         self._menu_elems = menu_elems
+        self._url = url
 
     def cafe_type(self):
         return self._cafe_type
@@ -104,6 +105,9 @@ class Menu:
 
     def menu_elems(self):
         return self._menu_elems
+
+    def url(self):
+        return self._url
 
 class DayOfWeek(enum.Enum):
     MONDAY = 0
@@ -176,26 +180,38 @@ class DayOfWeek(enum.Enum):
             return True
 
 class DeltaDay(enum.Enum):
+    TDBYYY = -4               # 그저께 The Day Before Yesterday's Yesterday's Yesterday
+    TDBYY = -3               # 그저께 The Day Before Yesterday Yesterday
     TDBY = -2               # 그저께 The Day Before Yesterday
     YESTERDAY = -1          # 어제
     TODAY = 0               # 오늘
     TOMORROW = 1            # 내일
     TDAT = 2                # 모레 The Day After Tomorrow
+    TDATT = 3              # 삼일후 The Dat After Tomorrow's Tomorrow
+    TDATTT = 4              # 삼일후 The Dat After Tomorrow's Tomorrow's Tomorrow
     UNKNOWN = -9
 
 
     # 델타 날짜 (오늘/어제/내일/모레)를 enum으로 변환하여 반환
     def str_to(str):
-        if str in ['그저께', '이틀전', '엊그제']:
+        if str in ['나흘전', '4일전', '전전전전날']:
+            return DeltaDay.TDBYYY
+        elif str in ['삼일전', '사흘전', '3일전', '전전전날']:
+            return DeltaDay.TDBYY
+        elif str in ['그저께', '이틀전', '엊그제', '2일전', '전전날']:
             return DeltaDay.TDBY
-        elif str in ['어제', '하루전', '어제께']:
+        elif str in ['어제', '하루전', '어제께', '1일전', '전날']:
             return DeltaDay.YESTERDAY
         elif str in ['오늘', '지금', '이번']:
             return DeltaDay.TODAY
-        elif str in ['내일', '하루후', '하루뒤', '다음날']:
+        elif str in ['내일', '하루후', '하루뒤', '다음날', '1일후', '1일뒤']:
             return DeltaDay.TOMORROW
-        elif str in ['모레', '이틀후', '글피', '내일모레', '다다음날']:
+        elif str in ['모레', '이틀후', '글피', '내일모레', '다다음날', '2일후', '2일뒤']:
             return DeltaDay.TDAT
+        elif str in ['삼일뒤', '삼일후', '사흘뒤', '사흘후', '다다다음날', '3일후', '3일뒤']:
+            return DeltaDay.TDATT
+        elif str in ['나흘뒤', '나흘후', '다다다다음날', '4일후', '4일뒤']:
+            return DeltaDay.TDATTT
         else:
             return DeltaDay.UNKNOWN
 
