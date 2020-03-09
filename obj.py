@@ -1,31 +1,33 @@
 import enum
 
+
 class CafeteriaType(enum.Enum):
     STUDENT = 0                     # 학생식당
     STAFF = 1                       # 교직원식당
     SNACKBAR = 2                    # 분식당
-
-    PUROOM = 10                     # 푸름관
-    OREUM1 = 11                     # 오름관1동
-    OREUM3 = 12                     # 오름관3동
+    PUROOM = 3                      # 푸름관
+    OREUM1 = 4                      # 오름관1동
+    OREUM3 = 5                      # 오름관3동
 
     UNKNOWN = -1
 
-    def to_str(type):
-        if type is CafeteriaType.STUDENT:
-            return '학색식당'
-        elif type is CafeteriaType.STAFF:
+
+    def to_str(self):
+        if self is CafeteriaType.STUDENT:
+            return '학생식당'
+        elif self is CafeteriaType.STAFF:
             return '교직원식당'
-        elif type is CafeteriaType.SNACKBAR:
+        elif self is CafeteriaType.SNACKBAR:
             return '분식당'
-        elif type is CafeteriaType.PUROOM:
+        elif self is CafeteriaType.PUROOM:
             return '푸름관'
-        elif type is CafeteriaType.OREUM1:
+        elif self is CafeteriaType.OREUM1:
             return '오름관1동'
-        elif type is CafeteriaType.OREUM3:
+        elif self is CafeteriaType.OREUM3:
             return '오름관3동'
         else:
             return '알수없음'
+
 
     def str_to(str):
         if str in ['학생식당', '학생', '학식당', '학식', '학']:
@@ -43,6 +45,7 @@ class CafeteriaType(enum.Enum):
         else:
             return CafeteriaType.UNKNOWN
 
+
 class MealTimeType(enum.Enum):
     BREAKFAST = 0                   # 조식
     LUNCH = 1                       # 중식
@@ -50,17 +53,19 @@ class MealTimeType(enum.Enum):
     ONECOURSE = 3                   # 일품요리
     UNKNOWN = -1
 
-    def to_str(meal_time):
-        if meal_time is MealTimeType.BREAKFAST:
+
+    def to_str(self):
+        if self is MealTimeType.BREAKFAST:
             return '조식'
-        elif meal_time is MealTimeType.LUNCH:
+        elif self is MealTimeType.LUNCH:
             return '중식'
-        elif meal_time is MealTimeType.DINNER:
+        elif self is MealTimeType.DINNER:
             return '석식'
-        elif meal_time is MealTimeType.ONECOURSE:
+        elif self is MealTimeType.ONECOURSE:
             return '일품요리'
         else:
             return '알수없음'
+
 
     def str_to(str):
         if str in ['조식']:
@@ -74,17 +79,19 @@ class MealTimeType(enum.Enum):
         else:
             return MealTimeType.UNKNOWN
 
-    def to_emoji(meal_time):
-        if meal_time is MealTimeType.BREAKFAST:
+
+    def to_emoji(self):
+        if self is MealTimeType.BREAKFAST:
             return ':sunrise:'
-        elif meal_time is MealTimeType.LUNCH:
+        elif self is MealTimeType.LUNCH:
             return ':sunny:'
-        elif meal_time is MealTimeType.DINNER:
+        elif self is MealTimeType.DINNER:
             return ':crescent_moon:'
-        elif meal_time is MealTimeType.ONECOURSE:
+        elif self is MealTimeType.ONECOURSE:
             return ':fork_and_knife:'
         else:
             return ':question:'
+
 
 class Menu:
     def __init__(self, cafe_type, date, meal_time_type, menu_elems, url):
@@ -109,6 +116,7 @@ class Menu:
     def url(self):
         return self._url
 
+
 class DayOfWeek(enum.Enum):
     MONDAY = 0
     TUESDAY = 1
@@ -119,23 +127,25 @@ class DayOfWeek(enum.Enum):
     SUNDAY = 6
     UNKNOWN = -1
 
-    def to_str(day):
-        if day is DayOfWeek.MONDAY:
+
+    def to_str(self):
+        if self is DayOfWeek.MONDAY:
             return '월'
-        elif day is DayOfWeek.TUESDAY:
+        elif self is DayOfWeek.TUESDAY:
             return '화'
-        elif day is DayOfWeek.WEDNESDAY:
+        elif self is DayOfWeek.WEDNESDAY:
             return '수'
-        elif day is DayOfWeek.THURSDAY:
+        elif self is DayOfWeek.THURSDAY:
             return '목'
-        elif day is DayOfWeek.FRIDAY:
+        elif self is DayOfWeek.FRIDAY:
             return '금'
-        elif day is DayOfWeek.SATURDAY:
+        elif self is DayOfWeek.SATURDAY:
             return '토'
-        elif day is DayOfWeek.SUNDAY:
+        elif self is DayOfWeek.SUNDAY:
             return '일'
         else:
             return '알수없음'
+
 
     def str_to(str):
         if str in ['월', '월요일']:
@@ -154,6 +164,7 @@ class DayOfWeek(enum.Enum):
             return DayOfWeek.SUNDAY
         else:
             return DayOfWeek.UNKNOWN
+
 
     def int_to_dow(i):
         if i is 0:
@@ -178,6 +189,7 @@ class DayOfWeek(enum.Enum):
             return False
         else:
             return True
+
 
 class DeltaDay(enum.Enum):
     TDBYYY = -4               # 그저께 The Day Before Yesterday's Yesterday's Yesterday
@@ -215,8 +227,70 @@ class DeltaDay(enum.Enum):
         else:
             return DeltaDay.UNKNOWN
 
+
     def is_delta_day(str):
         if DeltaDay.str_to(str) is DeltaDay.UNKNOWN:
             return False
         else:
             return True
+
+class EmojiNum(enum.Enum):
+    ZERO = 0
+    ONE = 1
+    TWO = 2
+    THREE = 3
+    FOUR = 4
+    FIVE = 5
+    SIX = 6
+    SEVEN = 7
+    EIGHT = 8
+    NINE = 9
+    UNKNOWN = -1
+
+    def to_emoji_unicode(self):
+        if self is EmojiNum.ZERO:
+            return '0\u20e3'
+        elif self is EmojiNum.ONE:
+            return '1\u20e3'
+        elif self is EmojiNum.TWO:
+            return '2\u20e3'
+        elif self is EmojiNum.THREE:
+            return '3\u20e3'
+        elif self is EmojiNum.FOUR:
+            return '4\u20e3'
+        elif self is EmojiNum.FIVE:
+            return '5\u20e3'
+        elif self is EmojiNum.SIX:
+            return '6\u20e3'
+        elif self is EmojiNum.SEVEN:
+            return '7\u20e3'
+        elif self is EmojiNum.EIGHT:
+            return '8\u20e3'
+        elif self is EmojiNum.NINE:
+            return '9\u20e3'
+        else:
+            return '\u2753'
+
+    def emoji_unicode_to(unicode):
+        if unicode == '0\u20e3':
+            return EmojiNum.ZERO
+        elif unicode == '1\u20e3':
+            return EmojiNum.ONE
+        elif unicode == '2\u20e3':
+            return EmojiNum.TWO
+        elif unicode == '3\u20e3':
+            return EmojiNum.THREE
+        elif unicode == '4\u20e3':
+            return EmojiNum.FOUR
+        elif unicode == '5\u20e3':
+            return EmojiNum.FIVE
+        elif unicode == '6\u20e3':
+            return EmojiNum.SIX
+        elif unicode == '7\u20e3':
+            return EmojiNum.SEVEN
+        elif unicode == '8\u20e3':
+            return EmojiNum.EIGHT
+        elif unicode == '9\u20e3':
+            return EmojiNum.NINE
+        elif unicode == '\u2753':
+            return EmojiNum.UNKNOWN

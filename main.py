@@ -3,6 +3,7 @@ import os
 import urllib
 import obj
 import datetime
+import asyncio
 
 from io import BytesIO
 from bs4 import BeautifulSoup
@@ -22,12 +23,9 @@ BOT_TOKEN = ""
 PREFIX = ""
 EMBED_COLOR = 0x00D1FF
 
-STUDENT_CAFETERIA_URL = ""
-STAFF_CAFETERIA_URL = ""
-SNACKBAR_URL = ""
-DORM_PUROOM_URL = ""
-DORM_OREUM1_URL = ""
-DORM_OREUM3_URL = ""
+CAFETERIA_LIST = [CafeteriaType.STUDENT, CafeteriaType.STAFF, CafeteriaType.SNACKBAR, CafeteriaType.PUROOM, CafeteriaType.OREUM1, CafeteriaType.OREUM3]
+CAFETERIA_URL = []
+
 INVITE_URL="https://discordapp.com/oauth2/authorize?client_id=683609253575131157&scope=bot&permissions=101440"
 
 KST = timezone('Asia/Seoul')
@@ -35,17 +33,16 @@ KST = timezone('Asia/Seoul')
 bot = commands.Bot("")
 
 def load_env():
-    global BOT_TOKEN, PREFIX, STUDENT_CAFETERIA_URL, STAFF_CAFETERIA_URL, SNACKBAR_URL, DORM_PUROOM_URL, DORM_OREUM1_URL, DORM_OREUM3_URL
-
+    global BOT_TOKEN, PREFIX
     BOT_TOKEN = get_env_var('BOT_TOKEN')
     PREFIX = get_env_var('PREFIX')
 
-    STUDENT_CAFETERIA_URL = get_env_var('STUDENT_CAFETERIA_URL')
-    STAFF_CAFETERIA_URL = get_env_var('STAFF_CAFETERIA_URL')
-    SNACKBAR_URL = get_env_var('SNACKBAR_URL')
-    DORM_PUROOM_URL = get_env_var('DORM_PUROOM_URL')
-    DORM_OREUM1_URL = get_env_var('DORM_OREUM1_URL')
-    DORM_OREUM3_URL = get_env_var('DORM_OREUM3_URL')
+    CAFETERIA_URL.append(get_env_var('STUDENT_CAFETERIA_URL'))
+    CAFETERIA_URL.append(get_env_var('STAFF_CAFETERIA_URL'))
+    CAFETERIA_URL.append(get_env_var('SNACKBAR_URL'))
+    CAFETERIA_URL.append(get_env_var('DORM_PUROOM_URL'))
+    CAFETERIA_URL.append(get_env_var('DORM_OREUM1_URL'))
+    CAFETERIA_URL.append(get_env_var('DORM_OREUM3_URL'))
 
 
 def get_env_var(var_name):
@@ -85,8 +82,8 @@ async def help(ctx):
     embed = Embed(title='KIT 짬봇 for Discord입니다.',
                   description='명령어들은 아래와 같습니다.',
                   color=EMBED_COLOR)
-    embed.add_field(name='사용 방법', value=f'{PREFIX}짬 [식당명] [옵션-날짜]', inline=False)
-    embed.add_field(name='간단 사용', value=f'{PREFIX}짬 학생식당, {PREFIX}짬 분식당, {PREFIX}짬 푸름관, {PREFIX}짬 오름관3동 ...', inline=False)
+    embed.add_field(name='사용 방법', value=f'{PREFIX}짬 [옵션-식당명] [옵션-날짜]', inline=False)
+    embed.add_field(name='간단 사용', value=f'{PREFIX}짬 학생식당, {PREFIX}짬 푸름관, {PREFIX}짬 오늘, {PREFIX}짬 내일 ...', inline=False)
     embed.add_field(name='축약어 사용', value=f'{PREFIX}짬 학식, {PREFIX}짬 분식, {PREFIX}짬 푸밥, {PREFIX}짬 오3 ...', inline=False)
     embed.add_field(name='날짜 사용', value=f'{PREFIX}짬 푸름관 내일, {PREFIX}짬 푸름관 수요일, {PREFIX}짬 학생식당 2020-01-01 ...', inline=False)
     embed.add_field(name='명령어', value=f'{PREFIX}짬, {PREFIX}도움, {PREFIX}대하여, {PREFIX}초대링크', inline=False)
@@ -122,28 +119,34 @@ async def about(ctx):
 async def zzam(ctx, *args):
     log(from_text(ctx), 'zzam command')
 
-    if not args or len(args) > 2:
-        log(from_text(ctx), 'empty args')
-        await ctx.channel.send(f'사용법 : {PREFIX}짬 [식당] [옵션-날짜]\n자세히 : {PREFIX}도움')
-        return
+    #if not args or len(args) > 1:
+    #    log(from_text(ctx), 'empty args')
+    #    await ctx.channel.send(f'사용법 1 : {PREFIX}짬 [식당] [옵션-날짜]\n사용법 2 : {PREFIX}짬 [날짜]\n자세히 : {PREFIX}도움')
+    #    return
 
     await ctx.channel.trigger_typing()                          # 봇 상태를 타이핑중으로 변경.
-
-    if len(args) > 1:
-        user_input = args[1]
-        try:
-            date = normalize_date(user_input)
-            log(from_text(ctx), f'target is {str(date)}')
-        except Exception as e:
-            await ctx.channel.send(e)
-            log(from_text(ctx), 'wrong date str')
-            return
-    else:
+    if len(args) < 1:
         date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 오늘로 설정
-        log(from_text(ctx), f'target is today : {str(date)}')
+        cafe_type = await question_cafeteria(ctx)
 
-    cafeteria_name = args[0]
-    cafe_type = CafeteriaType.str_to(cafeteria_name)
+    else:
+        cafe_type = CafeteriaType.str_to(args[0])
+
+        if cafe_type is not CafeteriaType.UNKNOWN:                  # 인자가 식당명일 때
+            date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 오늘로 설정
+        else:
+            date = args[0] if len(args) == 1 else args[1]
+
+            try:
+                date = normalize_date(date)
+                log(from_text(ctx), f'target is {str(date)}')
+            except Exception as e:
+                await ctx.channel.send('날짜 혹은 식당명이 올바르지 않습니다.')
+                log(from_text(ctx), 'wrong date str')
+                return
+
+            if len(args) == 1:
+                cafe_type = await question_cafeteria(ctx)
 
     week_menu_list = ''
     try:
@@ -165,6 +168,52 @@ async def zzam(ctx, *args):
     else:
         await ctx.channel.send('해당 날짜에 해당되는 식단이 없습니다.')
         log(from_text(ctx), 'zzam no result from week_menu_list')
+
+async def question_cafeteria(ctx):
+    log(from_text(ctx), 'Question Cafeteria')
+
+    # 식당 목록 생성
+    index_emoji_list = []
+    cafeteria_list_str = ''
+    cnt = 0
+    for cafe in CAFETERIA_LIST:
+        index_emoji_list.append(EmojiNum(cnt+1).to_emoji_unicode())
+        cafeteria_list_str += index_emoji_list[cnt]  + ' ' + cafe.to_str() + '\n'
+        cnt += 1
+
+    # embed 메시지 전송
+    embed = Embed(title='어떤 식당을 조회할까요?',
+                  color=EMBED_COLOR)
+    embed.add_field(name='식당 목록', value=cafeteria_list_str, inline=False)
+    embed.set_footer(text='알아보고자 하는 식당 번호를 클릭해주세요.')
+    message = await ctx.channel.send(embed=embed, delete_after=30)
+
+    # 리액션 달기
+    cnt = 0
+    for cafe in CAFETERIA_LIST:
+        await message.add_reaction(index_emoji_list[cnt])
+        cnt += 1
+
+    # 반응 체크용 메소드
+    def check(reaction, user):
+        return user == ctx.author and reaction.emoji in index_emoji_list
+
+    # 반응 확인
+    try:
+        reaction, user = await bot.wait_for('reaction_add', timeout=30, check=check)
+    except asyncio.TimeoutError:
+        await ctx.channel.send('취소되었습니다. 😅')
+        return
+    finally:
+        await message.delete()
+
+    # 반응 분석
+    user_choice = EmojiNum.emoji_unicode_to(reaction.emoji)
+    if user_choice == EmojiNum.UNKNOWN:
+        raise Exception('알 수 없는 선택입니다.')
+    chosen_cafeteria = CAFETERIA_LIST[user_choice.value - 1]
+        
+    return chosen_cafeteria
 
 
 # 문자열 날짜가 델타 날짜(어제/오늘/모레)인지, 요일(월/화/수)인지, 일반타입(YYYY-mm-nn)인지 구별하여 정규화하여 반환함.
@@ -201,15 +250,15 @@ def fetch_menu_by_date(menu_list, date):
     
 # 전송을 위해 한 식단을 embed
 def menu_to_embed(menu):
-    day_of_week_text = DayOfWeek.to_str(DayOfWeek.int_to_dow(menu._date.weekday()))
+    day_of_week_text = DayOfWeek.int_to_dow(menu._date.weekday()).to_str()
     date_simple_text = menu._date.strftime('%m.%d') + ' (' + day_of_week_text + ')'
     cafe_type_text = '알수없음'
-    meal_time_text = MealTimeType.to_str(menu._meal_time_type)
+    meal_time_text = menu._meal_time_type.to_str()
     date_full_text = menu._date.strftime('%Y-%m-%d')
-    emoji = MealTimeType.to_emoji(menu._meal_time_type)
+    emoji = menu._meal_time_type.to_emoji()
 
     # 식당이름 enum화
-    cafe_type_text = CafeteriaType.to_str(menu._cafe_type)
+    cafe_type_text = menu._cafe_type.to_str()
 
     # 메뉴 배열 텍스트화
     menu_elems_txt = ''
@@ -230,28 +279,12 @@ def menu_to_embed(menu):
 
 # 식당에 알맞는 URL 설정 및 날짜 설정 후 파싱 시도
 def parse_zzam(cafeteria_type, date):
-
-    is_dormitory = False
-    URL = ''
+    if cafeteria_type is CafeteriaType.UNKNOWN:
+        raise Exception('알 수 없는 식당 유형입니다.')
+        log(from_text(ctx), 'Unknown Cafeteria Type')
 
     # 학생식당/교직원식당/분식당별 URL 설정
-    if cafeteria_type is CafeteriaType.STUDENT:
-        URL = STUDENT_CAFETERIA_URL
-    elif cafeteria_type is CafeteriaType.STAFF:
-        URL = STAFF_CAFETERIA_URL
-    elif cafeteria_type is CafeteriaType.SNACKBAR:
-        URL = SNACKBAR_URL
-    elif cafeteria_type is CafeteriaType.PUROOM:
-        URL = DORM_PUROOM_URL
-        is_dormitory = True
-    elif cafeteria_type is CafeteriaType.OREUM1:
-        URL = DORM_OREUM1_URL
-        is_dormitory = True
-    elif cafeteria_type is CafeteriaType.OREUM3:
-        URL = DORM_OREUM3_URL
-        is_dormitory = True
-    else:
-        raise Exception('알 수 없는 식당 유형입니다.')
+    URL = CAFETERIA_URL[cafeteria_type.value]
 
     # URL용 날짜 설정 (찾기 원하는 날짜가 일요일이면 달력이 넘어가서 하루 빼주고 파싱함)
     url_date = date
