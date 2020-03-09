@@ -125,9 +125,11 @@ async def zzam(ctx, *args):
     #    return
 
     await ctx.channel.trigger_typing()                          # 봇 상태를 타이핑중으로 변경.
+
     if len(args) < 1:
         date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 오늘로 설정
         cafe_type = await question_cafeteria(ctx)
+        await ctx.channel.trigger_typing()
 
     else:
         cafe_type = CafeteriaType.str_to(args[0])
@@ -147,8 +149,10 @@ async def zzam(ctx, *args):
 
             if len(args) == 1:
                 cafe_type = await question_cafeteria(ctx)
+                await ctx.channel.trigger_typing()
 
     week_menu_list = ''
+
     try:
         week_menu_list = parse_zzam(cafe_type, date)           # 식당, 날짜를 특정하여 해당되는 주의 모든 메뉴 파싱
         log(from_text(ctx), 'week menu parsed')
