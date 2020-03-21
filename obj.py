@@ -167,19 +167,19 @@ class DayOfWeek(enum.Enum):
 
 
     def int_to_dow(i):
-        if i is 0:
+        if i == 0:
             return DayOfWeek.MONDAY
-        elif i is 1:
+        elif i == 1:
             return DayOfWeek.TUESDAY
-        elif i is 2:
+        elif i == 2:
             return DayOfWeek.WEDNESDAY
-        elif i is 3:
+        elif i == 3:
             return DayOfWeek.THURSDAY
-        elif i is 4:
+        elif i == 4:
             return DayOfWeek.FRIDAY
-        elif i is 5:
+        elif i == 5:
             return DayOfWeek.SATURDAY
-        elif i is 6:
+        elif i == 6:
             return DayOfWeek.SUNDAY
         else:
             return DayOfWeek.UNKNOWN

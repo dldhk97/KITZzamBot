@@ -292,7 +292,7 @@ def parse_zzam(cafeteria_type, date):
 
     # URL용 날짜 설정 (찾기 원하는 날짜가 일요일이면 달력이 넘어가서 하루 빼주고 파싱함)
     url_date = date
-    if url_date.weekday() is 6:
+    if url_date.weekday() == 6:
         url_date -= timedelta(days=1)
     URL += 'mode=menuList&srDt=' + url_date.strftime('%Y-%m-%d')
 

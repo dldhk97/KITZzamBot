@@ -130,3 +130,5 @@ dmypy.json
 
 # VisualStudio
 .vs/
+.vscode/
+*.code-workspace
