@@ -35,4 +35,4 @@ $짬 [식당명] [옵션-날짜]
 * 특정 시간마다 식사 메뉴 알림
 * 리팩토링
 
-impressed by dccon hassan. repo : https://github.com/Dogdriip/dccon_hassan
+impressed by [dccon hassan](https://github.com/Dogdriip/dccon_hassan).
