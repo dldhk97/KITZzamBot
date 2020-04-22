@@ -218,11 +218,11 @@ class DeltaDay(enum.Enum):
             return DeltaDay.TODAY
         elif str in ['내일', '하루후', '하루뒤', '다음날', '1일후', '1일뒤']:
             return DeltaDay.TOMORROW
-        elif str in ['모레', '이틀후', '글피', '내일모레', '다다음날', '2일후', '2일뒤']:
+        elif str in ['모레', '이틀후', '이틀뒤', '글피', '내일모레', '다다음날', '2일후', '2일뒤']:
             return DeltaDay.TDAT
-        elif str in ['삼일뒤', '삼일후', '사흘뒤', '사흘후', '다다다음날', '3일후', '3일뒤']:
+        elif str in ['삼일뒤', '삼일후', '삼일뒤', '사흘뒤', '사흘후', '다다다음날', '3일후', '3일뒤']:
             return DeltaDay.TDATT
-        elif str in ['나흘뒤', '나흘후', '다다다다음날', '4일후', '4일뒤']:
+        elif str in ['나흘뒤', '나흘후', '나흘뒤', '다다다다음날', '4일후', '4일뒤']:
             return DeltaDay.TDATTT
         else:
             return DeltaDay.UNKNOWN

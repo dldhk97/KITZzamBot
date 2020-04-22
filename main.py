@@ -82,7 +82,7 @@ async def help(ctx):
     embed = Embed(title='KIT 짬봇 for Discord입니다.',
                   description='명령어들은 아래와 같습니다.',
                   color=EMBED_COLOR)
-    embed.add_field(name='사용 방법', value=f'{PREFIX}짬 [옵션-식당명] [옵션-날짜]', inline=False)
+    embed.add_field(name='사용 방법', value=f'{PREFIX}짬 [옵션-식당명] [옵션-날짜] (순서 바뀌어도 됨)', inline=False)
     embed.add_field(name='간단 사용', value=f'{PREFIX}짬 학생식당, {PREFIX}짬 푸름관, {PREFIX}짬 오늘, {PREFIX}짬 내일 ...', inline=False)
     embed.add_field(name='축약어 사용', value=f'{PREFIX}짬 학식, {PREFIX}짬 분식, {PREFIX}짬 푸밥, {PREFIX}짬 오3 ...', inline=False)
     embed.add_field(name='날짜 사용', value=f'{PREFIX}짬 푸름관 내일, {PREFIX}짬 푸름관 수요일, {PREFIX}짬 학생식당 2020-01-01 ...', inline=False)
@@ -112,6 +112,7 @@ async def about(ctx):
 # $짬 [식당] -> 오늘 해당식당 메뉴 표기
 # $짬 [식당] [날짜] -> 해당 날짜의 해당 식당 메뉴 표기
 # $짬 [식당] [오늘/내일/모레/어제/월요일~일요일]
+# $짬 [날짜] [식당] -> 가능
 # (+ embed로 표시하고, 아래쪽에 좌우 화살표로 넘길 수 있게?)
 # (+ DM으로 보내줄까 아니면 채팅방에 띄울까?)
 # (+ n초뒤 자동으로 삭제?)
@@ -126,30 +127,36 @@ async def zzam(ctx, *args):
 
     await ctx.channel.trigger_typing()                          # 봇 상태를 타이핑중으로 변경.
 
-    if len(args) < 1:
-        date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 오늘로 설정
+    if len(args) < 1:           # "짬"만 입력하면 물어본다. 오늘짬을 어느 식당에서 조회할지
+        date = "오늘"        # 탐색 시간을 오늘로 설정
         cafe_type = await question_cafeteria(ctx)
         await ctx.channel.trigger_typing()
 
     else:
-        cafe_type = CafeteriaType.str_to(args[0])
+        cafe_type = CafeteriaType.str_to(args[0])                   # 첫 인자가 식당인지 체크
 
-        if cafe_type is not CafeteriaType.UNKNOWN:                  # 인자가 식당명일 때
-            date = datetime(datetime.today().year, datetime.today().month, datetime.today().day, 0, 0, 0, 0, KST)        # 탐색 시간을 오늘로 설정
+        if cafe_type is not CafeteriaType.UNKNOWN:                  # 첫 인자가 식당명일 때
+            if len(args) > 1:                                       # 옵션으로 주어진 인자가 있으면 날짜로 설정
+                date = args[1]
+            else:
+                date = "오늘"                                       # 인자 없으면 탐색 시간을 오늘로 설정
         else:
-            date = args[0] if len(args) == 1 else args[1]
-
-            try:
-                date = normalize_date(date)
-                log(from_text(ctx), f'target is {str(date)}')
-            except Exception as e:
-                await ctx.channel.send('날짜 혹은 식당명이 올바르지 않습니다.')
-                log(from_text(ctx), 'wrong date str')
-                return
-
-            if len(args) == 1:
+            date = args[0]                                          # 첫 인자가 식당이 아니면 날짜로 본다.
+            if len(args) == 1:                                      # 인자가 하나면, 식당을 물어본다.
                 cafe_type = await question_cafeteria(ctx)
                 await ctx.channel.trigger_typing()
+            else:
+                cafe_type = CafeteriaType.str_to(args[1])           # 두번재 인자가 식당인지 체크
+
+        # 문자열 날짜를 date로 바꾼다.
+        try:
+            date = normalize_date(date)
+            log(from_text(ctx), f'target is {str(date)}')
+        except Exception as e:
+            await ctx.channel.send('날짜 혹은 식당명이 올바르지 않습니다.')
+            log(from_text(ctx), 'wrong date str')
+            return
+            
 
     week_menu_list = ''
 
@@ -206,7 +213,7 @@ async def question_cafeteria(ctx):
     try:
         reaction, user = await bot.wait_for('reaction_add', timeout=30, check=check)
     except asyncio.TimeoutError:
-        await ctx.channel.send('취소되었습니다. 😅')
+        await ctx.channel.send('취소되었습니다. ??')
         return
     finally:
         await message.delete()
