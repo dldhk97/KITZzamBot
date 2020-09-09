@@ -120,15 +120,11 @@ async def about(ctx):
 async def zzam(ctx, *args):
     log(from_text(ctx), 'zzam command')
 
-    #if not args or len(args) > 1:
-    #    log(from_text(ctx), 'empty args')
-    #    await ctx.channel.send(f'사용법 1 : {PREFIX}짬 [식당] [옵션-날짜]\n사용법 2 : {PREFIX}짬 [날짜]\n자세히 : {PREFIX}도움')
-    #    return
-
     await ctx.channel.trigger_typing()                          # 봇 상태를 타이핑중으로 변경.
 
+    date = "오늘"               # 탐색 시간을 오늘로 설정
+
     if len(args) < 1:           # "짬"만 입력하면 물어본다. 오늘짬을 어느 식당에서 조회할지
-        date = "오늘"        # 탐색 시간을 오늘로 설정
         cafe_type = await question_cafeteria(ctx)
         await ctx.channel.trigger_typing()
 
@@ -138,25 +134,22 @@ async def zzam(ctx, *args):
         if cafe_type is not CafeteriaType.UNKNOWN:                  # 첫 인자가 식당명일 때
             if len(args) > 1:                                       # 옵션으로 주어진 인자가 있으면 날짜로 설정
                 date = args[1]
-            else:
-                date = "오늘"                                       # 인자 없으면 탐색 시간을 오늘로 설정
         else:
             date = args[0]                                          # 첫 인자가 식당이 아니면 날짜로 본다.
-            if len(args) == 1:                                      # 인자가 하나면, 식당을 물어본다.
+            if len(args) == 1:                                      # 인자가 날짜밖에 없으면, 식당을 물어본다.
                 cafe_type = await question_cafeteria(ctx)
                 await ctx.channel.trigger_typing()
             else:
                 cafe_type = CafeteriaType.str_to(args[1])           # 두번재 인자가 식당인지 체크
-
-        # 문자열 날짜를 date로 바꾼다.
-        try:
-            date = normalize_date(date)
-            log(from_text(ctx), f'target is {str(date)}')
-        except Exception as e:
-            await ctx.channel.send('날짜 혹은 식당명이 올바르지 않습니다.')
-            log(from_text(ctx), 'wrong date str')
-            return
             
+    # 문자열 날짜를 date로 바꾼다.
+    try:
+        date = normalize_date(date)
+        log(from_text(ctx), f'target is {str(date)}')
+    except Exception as e:
+        await ctx.channel.send('날짜 혹은 식당명이 올바르지 않습니다.')
+        log(from_text(ctx), 'wrong date str')
+        return
 
     week_menu_list = ''
 
@@ -316,7 +309,7 @@ def parse_homepage(url, cafeteria_type, date):
     # 등록된 메뉴가 있는지 체크
     menu_exist_check_html = menu_req_html.select('table > tbody > td')
     if menu_exist_check_html:
-        raise Exception('등록된 메뉴가 없습니다.')
+        raise Exception('등록된 메뉴가 없습니다.\n링크 : ' + url)
 
     # 이번주의 시작 날짜 겟
     menu_start_date_html = menu_req_html.select('fieldset > div > div > p')

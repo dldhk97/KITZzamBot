@@ -9,7 +9,7 @@ Heroku 무료 Dyno에서 테스트용으로 돌아가고 있는 봇입니다. �
 ## 설치 및 실행
 ```
 $ pip3 install -r requirements.txt
-env_example.txt 참고하여 .env 파일 생성 후, BOT_TOKEN에 봇 토큰 입력
+env.example 복사하여 .env 로 이름 변경 후, BOT_TOKEN에 봇 토큰 입력
 .env 파일 내 옵션들 수정 가능함(PREFIX)
 $ python3 main.py
 ```
